@@ -1,15 +1,85 @@
 """
-Image feature extraction for fruit ripeness classification.
+Utility functions for the fruit ripeness classification model.
 
-This module provides functions for extracting features from fruit images 
-that will be used for ripeness classification.
+This module provides functions for dataset handling, feature extraction,
+and evaluation metrics for the fruit ripeness classifier.
+
+File path: /models/model_utils.py
 """
 
 import numpy as np
 import cv2
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report
 from skimage.feature import graycomatrix, graycoprops
 from skimage.feature import local_binary_pattern
 from utils.image_processing import normalize_image
+
+def split_dataset(features, labels, test_size=0.2, random_state=42):
+    """
+    Split the dataset into training and testing sets.
+    
+    Args:
+        features (numpy.ndarray): Feature vectors
+        labels (numpy.ndarray): Corresponding labels
+        test_size (float): Proportion of the dataset to include in the test split
+        random_state (int): Random seed for reproducibility
+        
+    Returns:
+        tuple: (X_train, X_test, y_train, y_test)
+    """
+    return train_test_split(features, labels, test_size=test_size, 
+                           random_state=random_state, stratify=labels)
+
+def generate_confusion_matrix(y_true, y_pred, class_names=None):
+    """
+    Generate a confusion matrix from true and predicted labels.
+    
+    Args:
+        y_true (numpy.ndarray): True labels
+        y_pred (numpy.ndarray): Predicted labels
+        class_names (list): Names of the classes (optional)
+        
+    Returns:
+        numpy.ndarray: Confusion matrix
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    
+    # If class names are provided, create a labeled confusion matrix
+    if class_names:
+        # This could be extended to return a DataFrame with labels
+        pass
+    
+    return cm
+
+def calculate_performance_metrics(y_true, y_pred, class_names=None):
+    """
+    Calculate performance metrics for the classification model.
+    
+    Args:
+        y_true (numpy.ndarray): True labels
+        y_pred (numpy.ndarray): Predicted labels
+        class_names (list): Names of the classes (optional)
+        
+    Returns:
+        dict: Dictionary of performance metrics
+    """
+    # Calculate classification report
+    report = classification_report(y_true, y_pred, 
+                                 target_names=class_names if class_names else None,
+                                 output_dict=True)
+    
+    # Calculate confusion matrix
+    cm = generate_confusion_matrix(y_true, y_pred)
+    
+    # Calculate overall accuracy
+    accuracy = np.sum(y_true == y_pred) / len(y_true)
+    
+    return {
+        "accuracy": accuracy,
+        "classification_report": report,
+        "confusion_matrix": cm
+    }
 
 def extract_features(image):
     """
@@ -71,6 +141,12 @@ def extract_color_features(image):
     hsv_image = cv2.cvtColor(image_uint8, cv2.COLOR_RGB2HSV)
     h_channel, s_channel, v_channel = cv2.split(hsv_image)
     
+    # Add statistics for HSV channels
+    for channel in [h_channel, s_channel, v_channel]:
+        mean = np.mean(channel)
+        std = np.std(channel)
+        features.extend([mean, std])
+    
     # Calculate color histograms (RGB)
     hist_bins = 32
     r_hist = cv2.calcHist([image_uint8], [0], None, [hist_bins], [0, 256])
@@ -92,7 +168,7 @@ def extract_color_features(image):
     s_hist = cv2.normalize(s_hist, s_hist).flatten()
     v_hist = cv2.normalize(v_hist, v_hist).flatten()
     
-    # Calculate color ratios
+    # Calculate color ratios (useful for ripeness detection)
     r_g_ratio = np.mean(r_channel) / (np.mean(g_channel) + 1e-10)  # Avoid division by zero
     r_b_ratio = np.mean(r_channel) / (np.mean(b_channel) + 1e-10)
     g_b_ratio = np.mean(g_channel) / (np.mean(b_channel) + 1e-10)
@@ -169,6 +245,21 @@ def extract_texture_features(image):
     # Add basic texture statistics
     features.append(np.std(gray))  # Standard deviation as a texture measure
     features.append(np.var(gray))  # Variance as a texture measure
+    
+    # Calculate Gabor features (simplified)
+    ksize = 11
+    sigma = 4.0
+    theta = 0
+    lambd = 10.0
+    gamma = 0.5
+    
+    # Apply a single Gabor filter
+    gabor_filter = cv2.getGaborKernel((ksize, ksize), sigma, theta, lambd, gamma, 0, ktype=cv2.CV_32F)
+    gabor_filtered = cv2.filter2D(gray, cv2.CV_8UC3, gabor_filter)
+    
+    # Add simple statistics of Gabor response
+    features.append(np.mean(gabor_filtered))
+    features.append(np.std(gabor_filtered))
     
     return np.array(features)
 
@@ -263,3 +354,61 @@ def get_importance_map(image, model, grid_size=(16, 16)):
         importance_map = importance_map / np.max(importance_map)
     
     return importance_map
+
+def generate_feature_names():
+    """
+    Generate feature names for the extracted features.
+    
+    Returns:
+        list: Names of features
+    """
+    feature_names = []
+    
+    # RGB channel statistics
+    for channel in ['R', 'G', 'B']:
+        for stat in ['mean', 'std', 'median', 'min', 'max']:
+            feature_names.append(f"{channel}_{stat}")
+    
+    # HSV channel statistics
+    for channel in ['H', 'S', 'V']:
+        for stat in ['mean', 'std']:
+            feature_names.append(f"{channel}_{stat}")
+    
+    # Color ratios
+    feature_names.extend(['R_G_ratio', 'R_B_ratio', 'G_B_ratio'])
+    
+    # Histograms
+    reduced_bins = 8
+    for channel in ['R', 'G', 'B']:
+        for i in range(reduced_bins):
+            feature_names.append(f"{channel}_hist_{i}")
+    
+    for channel in ['H', 'S']:
+        for i in range(reduced_bins):
+            feature_names.append(f"{channel}_hist_{i}")
+    
+    # GLCM properties
+    distances = [1, 3]
+    angles = [0, 45, 90, 135]
+    props = ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation']
+    
+    for prop in props:
+        for dist in distances:
+            for angle in angles:
+                feature_names.append(f"GLCM_{prop}_d{dist}_a{angle}")
+    
+    # LBP features
+    radius = 3
+    n_points = 8 * radius
+    lbp_bins = n_points + 2
+    
+    for i in range(lbp_bins):
+        feature_names.append(f"LBP_bin_{i}")
+    
+    # Basic texture statistics
+    feature_names.extend(['texture_std', 'texture_var'])
+    
+    # Gabor features
+    feature_names.extend(['gabor_mean', 'gabor_std'])
+    
+    return feature_names
