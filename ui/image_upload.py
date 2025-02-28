@@ -5,7 +5,7 @@ File path: /ui/image_upload.py
 """
 
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
 import os
 import logging
@@ -131,7 +131,7 @@ class ImageUploadFrame(ttk.Frame):
         _, file_ext = os.path.splitext(file_path.lower())
         if file_ext not in self.ALLOWED_EXTENSIONS:
             logger.warning(f"Unsupported file format: {file_ext}")
-            tk.messagebox.showwarning(
+            messagebox.showwarning(
                 "Unsupported Format",
                 f"The selected file format is not supported.\n"
                 f"Please use one of: {', '.join(self.ALLOWED_EXTENSIONS)}"
@@ -151,61 +151,77 @@ class ImageUploadFrame(ttk.Frame):
             
         except Exception as e:
             logger.error(f"Error loading image: {str(e)}")
-            tk.messagebox.showerror(
+            messagebox.showerror(
                 "Image Error",
                 f"Could not load the selected image: {str(e)}"
             )
         
+
     def _display_image(self, image_path):
         """
         Display the selected image in the preview area.
-        
+
         Args:
             image_path (str): Path to the image to display
         """
         try:
             # Clear previous image and messages
             self.canvas.delete("all")
-            
-            # Load and resize image for display
-            image = Image.open(image_path)
-            
+
+            # Print debug info about the path
+            logger.debug(f"Attempting to display image from path: {image_path!r}")
+
+            # Load and resize image for display - handle errors explicitly
+            try:
+                image = Image.open(image_path)
+            except Exception as e:
+                logger.error(f"Failed to open image with PIL: {str(e)}")
+                raise
+
             # Calculate scaling factor to fit within preview area while preserving aspect ratio
             width, height = image.size
             scale = min(
                 self.PREVIEW_MAX_SIZE[0] / width,
                 self.PREVIEW_MAX_SIZE[1] / height
             )
-            
+
             # Calculate new dimensions
             new_width = int(width * scale)
             new_height = int(height * scale)
-            
+
             # Resize the image for display
             display_image = image.resize((new_width, new_height), Image.LANCZOS)
-            
+
             # Convert to PhotoImage for display in Tkinter
-            self.photo_image = ImageTk.PhotoImage(display_image)
-            
+            try:
+                self.photo_image = ImageTk.PhotoImage(display_image)
+            except Exception as e:
+                logger.error(f"Failed to create PhotoImage: {str(e)}")
+                raise
+
             # Center the image in the canvas
             x_offset = (self.PREVIEW_MAX_SIZE[0] - new_width) // 2
             y_offset = (self.PREVIEW_MAX_SIZE[1] - new_height) // 2
-            
+
             # Display the image on the canvas
             self.canvas.create_image(
-                x_offset, 
-                y_offset, 
-                anchor='nw', 
+                x_offset,
+                y_offset,
+                anchor='nw',
                 image=self.photo_image
             )
             
+            # Force the canvas to update
+            self.canvas.update()
+
             # Update image info
             image_file = os.path.basename(image_path)
             self.image_info.set(f"File: {image_file} | Dimensions: {width} × {height}")
-            
+
         except Exception as e:
             logger.error(f"Error displaying image: {str(e)}")
             # Reset the canvas with an error message
+            self.canvas.delete("all")  # Make sure to clear first
             self.canvas.create_text(
                 self.PREVIEW_MAX_SIZE[0] // 2,
                 self.PREVIEW_MAX_SIZE[1] // 2,
@@ -213,8 +229,8 @@ class ImageUploadFrame(ttk.Frame):
                 fill='red',
                 justify=tk.CENTER
             )
-            raise
-        
+            raise           
+
     def reset(self):
         """
         Reset the upload component to its initial state.

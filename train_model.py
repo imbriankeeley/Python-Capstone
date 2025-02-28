@@ -81,7 +81,7 @@ def load_kaggle_dataset(dataset_dir):
 
 def main():
     # Paths
-    dataset_dir = 'datasets/fruits'
+    dataset_dir = 'datasets/fruits/train'
     model_output_dir = 'models'
     model_file = os.path.join(model_output_dir, 'trained_model.pkl')
     

@@ -22,22 +22,22 @@ from utils.image_processing import extract_image_for_display
 
 logger = logging.getLogger(__name__)
 
-class MainWindow:
+class FruitRipenessApp(tk.Tk):
     """
-    Main application window containing all UI components.
+    Main application class that inherits from tk.Tk.
+    This is the proper way to create a Tkinter application with a single root window.
     """
     
-    def __init__(self, root):
+    def __init__(self):
         """
-        Initialize the main application window.
+        Initialize the main application.
+        """
+        super().__init__()
         
-        Args:
-            root (tk.Tk): Root Tkinter window
-        """
-        self.root = root
-        self.root.title("Fruit Ripeness Classification System")
-        self.root.geometry("1024x768")
-        self.root.minsize(800, 600)
+        # Configure the main window
+        self.title("Fruit Ripeness Classification System")
+        self.geometry("1024x768")
+        self.minsize(800, 600)
         
         # Initialize the classifier
         self.classifier = FruitRipenessClassifier()
@@ -45,7 +45,7 @@ class MainWindow:
         # Try to load pre-trained model
         self._load_model()
         
-        # Setup the UI components
+        # Set up the UI components
         self._setup_ui()
         
         # Set up status variables
@@ -54,6 +54,21 @@ class MainWindow:
         
         # Create a queue for background processing
         self.processing = False
+        
+        # Set application icon if available
+        try:
+            icon_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'icon.png')
+            if os.path.exists(icon_path):
+                icon = tk.PhotoImage(file=icon_path)
+                self.iconphoto(True, icon)
+        except Exception as e:
+            logger.warning(f"Could not load application icon: {str(e)}")
+    
+    def run(self):
+        """
+        Start the application main loop.
+        """
+        self.mainloop()
     
     def _load_model(self):
         """
@@ -76,7 +91,7 @@ class MainWindow:
         Set up the UI components for the main window.
         """
         # Create main frame
-        self.main_frame = ttk.Frame(self.root)
+        self.main_frame = ttk.Frame(self)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # Configure grid layout for the main frame
@@ -110,7 +125,7 @@ class MainWindow:
         self.visualization.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
         
         # Add status bar at the bottom
-        self.status_bar = ttk.Frame(self.root, relief=tk.SUNKEN, padding=(2, 2))
+        self.status_bar = ttk.Frame(self, relief=tk.SUNKEN, padding=(2, 2))
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         
         self.status_text = tk.StringVar()
@@ -121,12 +136,14 @@ class MainWindow:
         # Add menu bar
         self._setup_menu()
     
+    # Rest of the MainWindow class methods remain largely the same but are now part of the FruitRipenessApp class
+    
     def _setup_menu(self):
         """
         Set up the application menu.
         """
-        menubar = tk.Menu(self.root)
-        self.root.config(menu=menubar)
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
         
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -134,7 +151,7 @@ class MainWindow:
         file_menu.add_command(label="Open Image", command=self._open_image)
         file_menu.add_command(label="Save Results", command=self._save_results)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
+        file_menu.add_command(label="Exit", command=self.quit)
         
         # Model menu
         model_menu = tk.Menu(menubar, tearoff=0)
@@ -144,6 +161,8 @@ class MainWindow:
         model_menu.add_separator()
         model_menu.add_command(label="Train Model", command=self._train_model_dialog)
         model_menu.add_command(label="Evaluate Model", command=self._evaluate_model_dialog)
+        model_menu.add_separator()
+        model_menu.add_command(label="Run Test Image", command=self.test_with_sample_image)
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -162,11 +181,14 @@ class MainWindow:
             messagebox.showinfo("Processing in Progress", "Please wait for the current processing to complete.")
             return
         
+        if not os.path.exists(image_path):
+            messagebox.showerror("File Not Found", f"The image file was not found: {image_path}")
+            return
+        
         self.current_image_path = image_path
         
         if not self.classifier.is_trained:
-            messagebox.showwarning("Model Not Trained", 
-                                  "The classifier model is not trained. Classification results may not be accurate.")
+            logger.warning("Model not trained, attempting to process anyway")
         
         self.processing = True
         self.status_text.set("Processing image...")
@@ -189,8 +211,8 @@ class MainWindow:
             results = self.classifier.predict(processed_image)
             
             if not results["success"]:
-                self.root.after(0, lambda: messagebox.showerror("Classification Error", results["error"]))
-                self.root.after(0, lambda: self.status_text.set("Classification failed"))
+                self.after(0, lambda: messagebox.showerror("Classification Error", results["error"]))
+                self.after(0, lambda: self.status_text.set("Classification failed"))
                 self.processing = False
                 return
             
@@ -198,12 +220,12 @@ class MainWindow:
             self.current_classification_results = results
             
             # Update the UI in the main thread
-            self.root.after(0, lambda: self._update_ui_with_results(results, image_path))
+            self.after(0, lambda: self._update_ui_with_results(results, image_path))
             
         except Exception as e:
             logger.error(f"Error processing image: {str(e)}")
-            self.root.after(0, lambda: messagebox.showerror("Processing Error", f"Error processing image: {str(e)}"))
-            self.root.after(0, lambda: self.status_text.set("Error processing image"))
+            self.after(0, lambda: messagebox.showerror("Processing Error", f"Error processing image: {str(e)}"))
+            self.after(0, lambda: self.status_text.set("Error processing image"))
             
         finally:
             self.processing = False
@@ -226,6 +248,42 @@ class MainWindow:
         self.status_text.set(f"Classification complete: {results['predicted_class']} ({results['confidence']:.2f})")
         
         logger.info(f"Processed image: {image_path}, Result: {results['predicted_class']}")
+    
+    def test_with_sample_image(self, image_path=None):
+        """
+        Test the classification system with a sample image.
+        
+        Args:
+            image_path (str, optional): Path to a test image. If None, uses a default test image.
+        """
+        if image_path is None:
+            # Use a default test image path - adjust this to a path that exists on your system
+            image_path = os.path.join(os.path.dirname(__file__), '..', 'test_images', 'sample_apple.jpg')
+        
+        if not os.path.exists(image_path):
+            logger.warning(f"Test image not found: {image_path}")
+            messagebox.showwarning("Test Image Not Found", 
+                                 f"The test image was not found: {image_path}\n\nPlease add sample images to the test_images directory.")
+            return False
+        
+        try:
+            logger.info(f"Testing with sample image: {image_path}")
+            
+            # Update the UI to show the image has been loaded
+            self.image_upload._display_image(image_path)
+            
+            # Process the image
+            self.process_image(image_path)
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error during test with sample image: {str(e)}")
+            messagebox.showerror("Test Error", f"Error during test: {str(e)}")
+            return False
+    
+    # Add all other methods from the original MainWindow class here with 'self' instead of 'self.root'
+    # Remember to replace calls to self.root.after with self.after
+    # Don't forget to import messagebox instead of using tk.messagebox
     
     def _open_image(self):
         """

@@ -8,9 +8,8 @@ a standalone application for assessing fruit ripeness using computer vision.
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk
 import logging
-from ui.main_window import MainWindow
+from ui.main_window import FruitRipenessApp
 
 # Configure logging
 logging.basicConfig(
@@ -53,12 +52,6 @@ def setup_application():
     # Create necessary directories if they don't exist
     os.makedirs('output', exist_ok=True)
     os.makedirs('temp', exist_ok=True)
-    
-    # Set theme for ttk widgets
-    style = ttk.Style()
-    available_themes = style.theme_names()
-    if 'clam' in available_themes:
-        style.theme_use('clam')
 
 def main():
     """
@@ -74,24 +67,9 @@ def main():
     # Setup application resources
     setup_application()
     
-    # Create main application window
-    root = tk.Tk()
-    root.title("Fruit Ripeness Classification System")
-    
-    # Set application icon if available
-    try:
-        icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'icon.png')
-        if os.path.exists(icon_path):
-            icon = tk.PhotoImage(file=icon_path)
-            root.iconphoto(True, icon)
-    except Exception as e:
-        logger.warning(f"Could not load application icon: {str(e)}")
-    
-    # Initialize main window
-    app = MainWindow(root)
-    
-    # Start the application main loop
-    root.mainloop()
+    # Create and run the application
+    app = FruitRipenessApp()
+    app.run()
     
     logger.info("Application closed")
 

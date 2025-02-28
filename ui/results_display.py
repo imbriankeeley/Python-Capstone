@@ -118,6 +118,14 @@ class ResultsDisplayFrame(ttk.Frame):
                 padding=(5, 2)
             )
             category_label.grid(row=i, column=0, sticky='w')
+
+            # Save a reference to the label
+            category_label.name = f"{category}_label"  # Add name attribute
+
+            # Store reference to the label in a dictionary
+            if not hasattr(self, 'category_labels'):
+                self.category_labels = {}
+            self.category_labels[category] = category_label
             
             # Percentage variable and label
             self.confidence_vars[category] = tk.StringVar()
@@ -245,9 +253,12 @@ class ResultsDisplayFrame(ttk.Frame):
             
             # Highlight the predicted class in the confidence scores
             if category == predicted_class:
-                self.confidence_frame.nametowidget(f".{category}_label").configure(font=('Helvetica', 10, 'bold'))
+                # Use the stored reference instead of nametowidget
+                if category in self.category_labels:
+                    self.category_labels[category].configure(font=('Helvetica', 10, 'bold'))
             else:
-                self.confidence_frame.nametowidget(f".{category}_label").configure(font=('Helvetica', 10))
+                if category in self.category_labels:
+                    self.category_labels[category].configure(font=('Helvetica', 10))
         
         # Update recommendation
         action = recommendation.get("action", "Unknown")

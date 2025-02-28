@@ -6,3 +6,4 @@ scikit-image>=0.18.0
 matplotlib>=3.3.0
 seaborn>=0.11.0
 pytest>=6.0.0
+python-tk>=0.1.0
