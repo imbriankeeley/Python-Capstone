@@ -102,7 +102,7 @@ Additional Notes
 ## Usage
 
 1. Launch the application
-2. Upload an image of a fruit using the upload button
+2. Upload an image of a fruit using the upload button from the test directory in the project
 3. View the classification result and recommended action
 4. Explore visualizations for additional insights
 
