@@ -32,8 +32,15 @@ The Fruit Ripeness Classification System analyzes images of fruits and classifie
 git clone https://github.com/imbriankeeley/Python-Capstone.git
 cd Python-Capstone
 
+# Create a vm
+python -m venv venv
+source venv/bin/activate
+
 # Install required dependencies
 pip install -r requirements.txt
+
+# Train model (not necessary: model already trained)
+python train_model.py
 
 # Run the application
 python main.py
@@ -53,7 +60,6 @@ This project is structured as follows:
 - `models/`: Machine learning model implementations
 - `ui/`: User interface components
 - `utils/`: Utility functions
-- `tests/`: Test modules
 
 ## License
 
