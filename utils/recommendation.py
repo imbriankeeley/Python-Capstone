@@ -64,4 +64,4 @@ def adjust_recommendation_for_confidence(recommendation, confidence_score):
     """
     # TODO: Implement logic to adjust recommendations for low confidence
     # - If confidence is low, may suggest manual verification
-    pass
+    p
