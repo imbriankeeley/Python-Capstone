@@ -17,7 +17,7 @@ The Fruit Ripeness Classification System analyzes images of fruits and classifie
 
 ## Technology Stack
 
-- **Python 3.x**: Primary programming language
+- **Python 3.10: Primary programming language
 - **Tkinter**: GUI framework for interface development
 - **Pillow (PIL)**: Image processing and manipulation
 - **Matplotlib/Seaborn**: Visualization components
@@ -31,7 +31,7 @@ Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-Python: Python 3.7 or higher is required. You can download it from the official Python website: https://www.python.org/downloads/
+Python: **Python 3.10 is required, higher versions are incompatible**. You can download it from the official Python website: https://www.python.org/downloads/
 
 Git: Git is used to clone the repository. You can download it from: https://git-scm.com/downloads
 
@@ -56,14 +56,14 @@ It's best practice to create a virtual environment to isolate the project depend
 Windows:
 
 ```
-python -m venv venv
+python3.10 -m venv venv
 source venv\Scripts\activate
 ```
 
 macOS:
 
 ```
-python3 -m venv venv
+python3.10 -m venv venv
 source venv/bin/activate
 ```
 
@@ -77,7 +77,7 @@ pip install -r requirements.txt
 
 Running the Application
 
-- Model Training (Optional)
+- Model Training **(Optional)**
 
 - The model is already pre-trained, so this step is generally not necessary. However, if you wish to retrain the model, you can run:
 
@@ -94,6 +94,7 @@ python main.py
 ```
 
 This will start the application. Follow the on-screen instructions or refer to the application's specific documentation for usage details.
+- If you are running the application executable you will need to load the model from the Task2Application.zip in the model directory by clicking on Model and Load Model.
 
 Additional Notes
 
