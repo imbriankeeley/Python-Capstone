@@ -17,13 +17,46 @@ def generate_recommendation(ripeness_level, confidence_score):
             - action: Recommended action
             - description: Detailed description
             - confidence_modifier: Any modifier based on confidence
+            - priority: Priority level (1-4, where 4 is highest priority)
     """
-    # TODO: Implement recommendation logic based on ripeness level and confidence
-    # - Unripe: "Keep in storage for X days"
-    # - Ripe: "Stock for immediate sale"
-    # - Overripe: "Discount for quick sale"
-    # - Spoiled: "Discard"
-    pass
+    # Initialize recommendation dictionary
+    recommendation = {
+        "action": "",
+        "description": "",
+        "priority": 0,
+        "confidence_note": ""
+    }
+    
+    # Add confidence note if confidence is low
+    if confidence_score < 0.7:
+        recommendation["confidence_note"] = "Low confidence prediction: Consider manual verification"
+    
+    # Generate recommendation based on ripeness level
+    if ripeness_level == "unripe":
+        recommendation["action"] = "Store"
+        recommendation["description"] = "Keep in storage for ripening (3-5 days)"
+        recommendation["priority"] = 1
+        
+    elif ripeness_level == "ripe":
+        recommendation["action"] = "Stock"
+        recommendation["description"] = "Ideal for immediate display and sale"
+        recommendation["priority"] = 2
+        
+    elif ripeness_level == "overripe":
+        recommendation["action"] = "Discount"
+        recommendation["description"] = "Mark for quick sale at reduced price"
+        recommendation["priority"] = 3
+        
+    elif ripeness_level == "spoiled":
+        recommendation["action"] = "Discard"
+        recommendation["description"] = "Remove from inventory immediately"
+        recommendation["priority"] = 4
+    
+    # Further adjust recommendation for very low confidence
+    if confidence_score < 0.5:
+        recommendation = adjust_recommendation_for_confidence(recommendation, confidence_score)
+    
+    return recommendation
 
 def get_action_priority(ripeness_level):
     """
@@ -33,10 +66,16 @@ def get_action_priority(ripeness_level):
         ripeness_level (str): Predicted ripeness level
         
     Returns:
-        int: Priority level (1-4, where 1 is highest priority)
+        int: Priority level (1-4, where 4 is highest priority)
     """
-    # TODO: Implement priority assignment logic
-    pass
+    priorities = {
+        "unripe": 1,   # Lowest priority - normal storage
+        "ripe": 2,     # Medium priority - normal sale
+        "overripe": 3, # High priority - needs attention soon
+        "spoiled": 4   # Highest priority - immediate action required
+    }
+    
+    return priorities.get(ripeness_level.lower(), 1)  # Default to lowest priority if unknown
 
 def get_display_text(recommendation):
     """
@@ -48,8 +87,16 @@ def get_display_text(recommendation):
     Returns:
         str: Formatted display text
     """
-    # TODO: Implement text formatting for recommendations
-    pass
+    # Get basic components
+    action = recommendation.get("action", "")
+    description = recommendation.get("description", "")
+    confidence_note = recommendation.get("confidence_note", "")
+    
+    # Format display text
+    if confidence_note:
+        return f"{action}: {description}\n\nNote: {confidence_note}"
+    else:
+        return f"{action}: {description}"
 
 def adjust_recommendation_for_confidence(recommendation, confidence_score):
     """
@@ -62,6 +109,21 @@ def adjust_recommendation_for_confidence(recommendation, confidence_score):
     Returns:
         dict: Adjusted recommendation
     """
-    # TODO: Implement logic to adjust recommendations for low confidence
-    # - If confidence is low, may suggest manual verification
-    p
+    # Create a copy of the recommendation to avoid modifying the original
+    adjusted = recommendation.copy()
+    
+    # For very low confidence, suggest manual verification regardless of ripeness level
+    if confidence_score < 0.4:
+        adjusted["confidence_note"] = "Very low confidence: Manual inspection required"
+        
+        # For potentially high-priority items (overripe/spoiled), adjust the action
+        if recommendation["priority"] >= 3:
+            adjusted["action"] = "Check"
+            adjusted["description"] = "Possible quality issue. Manually verify before taking action."
+            # Keep the priority high to ensure attention
+        
+        # For lower priority items, suggest rechecking
+        else:
+            adjusted["description"] += " (Manual verification recommended)"
+    
+    return adjusted
