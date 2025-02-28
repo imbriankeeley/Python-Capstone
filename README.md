@@ -17,7 +17,7 @@ The Fruit Ripeness Classification System analyzes images of fruits and classifie
 
 ## Technology Stack
 
-- **Python 3.10: Primary programming language
+- **Python 3.10**: Primary programming language
 - **Tkinter**: GUI framework for interface development
 - **Pillow (PIL)**: Image processing and manipulation
 - **Matplotlib/Seaborn**: Visualization components
@@ -42,7 +42,7 @@ Follow these steps to get the application up and running:
 
 - Clone the Repository
 
-- Open your terminal (macOS) or command prompt (Windows) and navigate to the directory where you want to store the application. Then, clone the repository using the following command:
+- Open your terminal (macOS) or command prompt (Windows), I use Git Bash, and navigate to the directory where you want to store the application. Then, clone the repository using the following command:
 
 ```
 git clone https://github.com/imbriankeeley/Python-Capstone.git
