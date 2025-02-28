@@ -29,7 +29,7 @@ The Fruit Ripeness Classification System analyzes images of fruits and classifie
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/fruit-ripeness-classifier.git
+git clone https://github.com/imbriankeeley/Python-Capstone.git
 cd Python-Capstone
 
 # Install required dependencies
